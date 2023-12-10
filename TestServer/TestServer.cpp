@@ -1,52 +1,73 @@
 ﻿#define _CRT_SECURE_NO_WARNINGS
 
-#include <windows.h>
 #include <iostream>
 #include <filesystem>
 #include <string>
 #include <iomanip>
 #include <ctime>
+#include <winsock2.h>
 
-const std::string PIPE_NAME = "\\\\.\\pipe\\MyPipe";
+#pragma comment(lib, "ws2_32.lib")
 
 namespace fs = std::filesystem;
 
-void server() {
-    HANDLE hPipe = CreateNamedPipeA(
-        PIPE_NAME.c_str(),
-        PIPE_ACCESS_DUPLEX,
-        PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
-        1,
-        0,
-        0,
-        0,
-        NULL
-    );
+const int PORT = 12345;  // Choose a port
 
-    if (hPipe == INVALID_HANDLE_VALUE) {
-        std::cerr << "Error creating named pipe. Error code: " << GetLastError() << std::endl;
+void server() {
+    WSADATA wsaData;
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        std::cerr << "WSAStartup failed.\n";
         return;
     }
 
+    SOCKET serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if (serverSocket == INVALID_SOCKET) {
+        std::cerr << "Error creating server socket. Error code: " << WSAGetLastError() << std::endl;
+        WSACleanup();
+        return;
+    }
+
+    sockaddr_in serverAddr;
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_addr.s_addr = INADDR_ANY;
+    serverAddr.sin_port = htons(PORT);
+
+    if (bind(serverSocket, reinterpret_cast<SOCKADDR*>(&serverAddr), sizeof(serverAddr)) == SOCKET_ERROR) {
+        std::cerr << "Bind failed. Error code: " << WSAGetLastError() << std::endl;
+        closesocket(serverSocket);
+        WSACleanup();
+        return;
+    }
+
+    if (listen(serverSocket, SOMAXCONN) == SOCKET_ERROR) {
+        std::cerr << "Listen failed. Error code: " << WSAGetLastError() << std::endl;
+        closesocket(serverSocket);
+        WSACleanup();
+        return;
+    }
+
+    std::cout << "Server is listening for incoming connections...\n";
+
     while (true) {
-        std::cout << "Waiting for client to connect...\n";
+        SOCKET clientSocket = accept(serverSocket, NULL, NULL);
+        if (clientSocket == INVALID_SOCKET) {
+            std::cerr << "Accept failed. Error code: " << WSAGetLastError() << std::endl;
+            closesocket(serverSocket);
+            WSACleanup();
+            return;
+        }
 
-        if (ConnectNamedPipe(hPipe, NULL) != FALSE) {
-            std::cout << "Client connected.\n";
+        std::cout << "Client connected.\n";
 
-            char buffer[1024];
-            DWORD bytesRead;
+        char buffer[1024];
+        int bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0);
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            std::string clientDirectory(buffer);
+            std::cout << "Received directory path from client: " << clientDirectory << std::endl;
 
-            // Read directory path from the client
-            if (ReadFile(hPipe, buffer, sizeof(buffer), &bytesRead, NULL) != FALSE) {
-                buffer[bytesRead] = '\0';
-                std::string clientDirectory(buffer);
-                std::cout << "Received directory path from client: " << clientDirectory << std::endl;
-
-                // Read the directory contents
-                std::string directoryContents;
-
-                // Read the directory contents
+            std::string directoryContents;
+            try {
                 for (const auto& entry : std::filesystem::directory_iterator(clientDirectory)) {
                     auto time_point = std::chrono::time_point_cast<std::chrono::system_clock::duration>(entry.last_write_time() - fs::file_time_type::clock::now() + std::chrono::system_clock::now());
                     std::time_t time_t_value = std::chrono::system_clock::to_time_t(time_point);
@@ -63,26 +84,20 @@ void server() {
                         + "\n";
                 }
 
-                // Send directory contents to the client
-                DWORD bytesWritten;
-                if (WriteFile(hPipe, directoryContents.c_str(), static_cast<DWORD>(directoryContents.size()), &bytesWritten, NULL) != FALSE) {
-                    std::cout << "Directory contents sent to the client.\n";
-                }
-                else {
-                    std::cerr << "Error writing to pipe. Error code: " << GetLastError() << std::endl;
-                }
+                send(clientSocket, directoryContents.c_str(), directoryContents.size(), 0);
+                std::cout << "Directory contents sent to the client.\n";
             }
-            else {
-                std::cerr << "Error reading directory path from the client. Error code: " << GetLastError() << std::endl;
+            catch (const std::filesystem::filesystem_error& e) {
+                std::cerr << "Error accessing directory: " << e.what() << std::endl;
+                // Send an error message to the client if needed
             }
-
-            // Disconnect the pipe
-            DisconnectNamedPipe(hPipe);
         }
+
+        closesocket(clientSocket);
     }
 
-    // Close the pipe handle
-    CloseHandle(hPipe);
+    closesocket(serverSocket);
+    WSACleanup();
 }
 
 int main() {
