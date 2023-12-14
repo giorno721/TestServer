@@ -59,7 +59,7 @@ void client() {
 	}
 
 	// Receive the directory contents from the server
-	char buffer[4096];
+	char buffer[65536];
 	int bytesRead = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
 	if (bytesRead > 0) {
 	  buffer[bytesRead] = '\0';
@@ -67,7 +67,6 @@ void client() {
 	}
 	else if (bytesRead == 0) {
 	  std::cerr << "Server disconnected.\n";
-
 	}
 	else {
 	  std::cerr << "Error receiving from server. Error code: " << WSAGetLastError() << std::endl;
@@ -80,8 +79,8 @@ void client() {
   WSACleanup();
 }
 
-//int main() {
-//  client();
-//  //lkjh
-//  return 0;
-//}
+int main() {
+  client();
+  //lkjh
+  return 0;
+}

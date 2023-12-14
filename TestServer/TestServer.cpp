@@ -53,7 +53,8 @@ DWORD WINAPI ProcessClient(LPVOID lpParameter)
 
 	char buffer[1024];
 	int bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0);
-	if (bytesRead > 0) {
+	if (bytesRead > 0)
+	{
 	  buffer[bytesRead] = '\0';
 	  auto userInformation = SplitInformation(buffer);
 
