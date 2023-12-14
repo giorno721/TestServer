@@ -33,12 +33,22 @@ std::vector<std::string> SplitInformation(char buffer[])
     return result;
 }
 
+struct Data
+{
+    Cache cache;
+    bool condition;
+};
+
 DWORD WINAPI ClearCachePeriodically(LPVOID lpParameter)
 {
-    Cache* cache = reinterpret_cast<Cache*>(lpParameter);
-    while (true) {
-        Sleep(5000);  // Використання Sleep з WinAPI для затримки на 5 секунд
-        cache->ClearData();
+    Data* ptr = reinterpret_cast<Data*>(lpParameter);
+    while (!ptr->cache.GetDirectoryContents().empty())
+    {
+        Sleep(25000);
+        if (ptr->condition)
+        {
+            ptr->cache.ClearData();
+        }
     }
     return 0;
 }
@@ -46,20 +56,11 @@ DWORD WINAPI ClearCachePeriodically(LPVOID lpParameter)
 DWORD WINAPI ProcessClient(LPVOID lpParameter)
 {
     SOCKET clientSocket = (SOCKET)lpParameter;
-    HANDLE hThread = NULL;
-    int i = 0;
-    Cache cache;
 
+    Data* ptr = new Data;
     while (true)
     {
-        if (i == 1)
-        {
-        /*    if (!TerminateThread(hThread, 0))
-            {
-                std::cerr << "Failed to terminate thread. Error code: " << GetLastError() << std::endl;
-            }*/
-        }
-        
+        ptr->condition = true;
 
         char buffer[1024];
         int bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0);
@@ -75,17 +76,19 @@ DWORD WINAPI ProcessClient(LPVOID lpParameter)
 
             try
             {
-                if (cache.GetPath() == userInformation[0] &&
-                    cache.GetFileExtension() == userInformation[1])
+                if (ptr->cache.GetPath() == userInformation[0] &&
+                    ptr->cache.GetFileExtension() == userInformation[1])
                 {
-                    send(clientSocket, cache.GetDirectoryContents().c_str(), cache.GetDirectoryContents().size(), 0);
+                    send(clientSocket, ptr->cache.GetDirectoryContents().c_str(), ptr->cache.GetDirectoryContents().size(), 0);
                     std::cout << "Directory contents sent to the client.\n";
                 }
                 else
                 {
+                    ptr->condition = true;
+
                     for (const auto& entry : std::filesystem::directory_iterator(userInformation[0]))
                     {
-                        if (entry.path().extension() == userInformation[1] or userInformation[1] == "all")
+                        if (entry.path().extension() == userInformation[1] || userInformation[1] == "all")
                         {
                             auto time_point = std::chrono::time_point_cast<std::chrono::system_clock::duration>
                                 (entry.last_write_time() - fs::file_time_type::clock::now() + std::chrono::system_clock::now());
@@ -104,21 +107,21 @@ DWORD WINAPI ProcessClient(LPVOID lpParameter)
                         }
                     }
 
-                    if (directoryContents.size() <= 0)
+                    if (directoryContents.size() == 0)
                     {
-                        std::string messaage = "File is not found";
-                        send(clientSocket, messaage.c_str(), messaage.size(), 0);
+                        std::string message = "File is not found.";
+                        send(clientSocket, message.c_str(), message.size(), 0);
                     }
                     else
                     {
                         send(clientSocket, directoryContents.c_str(), directoryContents.size(), 0);
                     }
                     std::cout << "Directory contents sent to the client.\n";
-                    cache.SetPath(userInformation[0]);
-                    cache.SetFileExtension(userInformation[1]);
-                    cache.SetDirectoryContents(directoryContents);
-                    i = 1;
-                    hThread = CreateThread(NULL, NULL, ClearCachePeriodically, (LPVOID)&cache, NULL, NULL);
+
+                    ptr->cache.SetPath(userInformation[0]);
+                    ptr->cache.SetFileExtension(userInformation[1]);
+                    ptr->cache.SetDirectoryContents(directoryContents);
+                    CreateThread(NULL, NULL, ClearCachePeriodically, (LPVOID)ptr, NULL, NULL);
                 }
             }
             catch (const std::filesystem::filesystem_error& e) {
@@ -133,10 +136,8 @@ DWORD WINAPI ProcessClient(LPVOID lpParameter)
         }
     }
 
-    CloseHandle(hThread);
     closesocket(clientSocket);
     return 0;
-
 }
 
 void server() {
