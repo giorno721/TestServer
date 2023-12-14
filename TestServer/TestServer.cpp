@@ -83,7 +83,7 @@ DWORD WINAPI ProcessClient(LPVOID lpParameter)
                 {
                     for (const auto& entry : std::filesystem::directory_iterator(userInformation[0]))
                     {
-                        if (entry.path().extension() == userInformation[1])
+                        if (entry.path().extension() == userInformation[1] or userInformation[1] == "all")
                         {
                             auto time_point = std::chrono::time_point_cast<std::chrono::system_clock::duration>
                                 (entry.last_write_time() - fs::file_time_type::clock::now() + std::chrono::system_clock::now());
