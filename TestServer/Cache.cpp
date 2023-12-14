@@ -27,3 +27,10 @@ void Cache::SetFileExtension(const std::string &newFileExtension) {
 void Cache::SetDirectoryContents(const std::string &newDirectoryContents) {
   directoryContents = newDirectoryContents;
 }
+
+void Cache::ClearData() {
+  path = "";
+  fileExtension = "";
+  directoryContents = "";
+  std::cout << "Cache data cleared!" << std::endl;
+}

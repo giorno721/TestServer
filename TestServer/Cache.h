@@ -16,6 +16,8 @@ public:
   void SetFileExtension(const std::string &newFileExtension);
   void SetDirectoryContents(const std::string &newDirectoryContents);
 
+  void ClearData();
+
 private:
   std::string path;
   std::string fileExtension;
