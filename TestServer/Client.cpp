@@ -4,9 +4,10 @@
 #include <ws2tcpip.h>
 
 #pragma comment(lib, "ws2_32.lib")
+using namespace std;
 
 const int PORT = 12345;  // Use the same port as the server
-const char* SERVER_IP = "127.0.0.1";  // Replace with the server's IP address
+const char* SERVER_IP = "192.168.56.1";  // Replace with the server's IP address
 
 void client() {
     WSADATA wsaData;
@@ -17,7 +18,7 @@ void client() {
 
     SOCKET clientSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (clientSocket == INVALID_SOCKET) {
-        std::cerr << "Error creating client socket. Error code: " << WSAGetLastError() << std::endl;
+        std::cerr << "Error creating client socket. Errocr code: " << WSAGetLastError() << std::endl;
         WSACleanup();
         return;
     }
@@ -42,8 +43,15 @@ void client() {
         std::cout << "Enter the directory path: ";
         std::getline(std::cin, directoryPath);
 
-        if (send(clientSocket, directoryPath.c_str(), static_cast<int>(directoryPath.size()) + 1, 0) != SOCKET_ERROR) {
-            std::cout << "Directory path sent to the server: " << directoryPath << std::endl;
+        std::string fileExtension;
+        std::cout << "Enter the file extension: ";
+        std::getline(std::cin, fileExtension);
+
+        std::string fileAndPath = directoryPath + "|" + fileExtension;
+
+        if (send(clientSocket, fileAndPath.c_str(),
+            static_cast<int>(fileAndPath.size()) + 1, 0) != SOCKET_ERROR) {
+            std::cout << "Directory path and file extension sent to the server: " << fileAndPath << std::endl;
         }
         else {
             std::cerr << "Error sending to server. Error code: " << WSAGetLastError() << std::endl;
@@ -51,7 +59,7 @@ void client() {
         }
 
         // Receive the directory contents from the server
-        char buffer[4096];
+        char buffer[65536];
         int bytesRead = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
         if (bytesRead > 0) {
             buffer[bytesRead] = '\0';
@@ -59,7 +67,6 @@ void client() {
         }
         else if (bytesRead == 0) {
             std::cerr << "Server disconnected.\n";
-            break;
         }
         else {
             std::cerr << "Error receiving from server. Error code: " << WSAGetLastError() << std::endl;
@@ -72,7 +79,8 @@ void client() {
     WSACleanup();
 }
 
-int main() {
+int main1() {
     client();
+    //lkjh
     return 0;
 }
