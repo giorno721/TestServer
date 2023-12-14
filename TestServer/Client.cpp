@@ -72,8 +72,8 @@ void client() {
     WSACleanup();
 }
 
-int main() {
-    client();
-    //lkjh
-    return 0;
-}
+//int main() {
+//    client();
+//    //lkjh
+//    return 0;
+//}
