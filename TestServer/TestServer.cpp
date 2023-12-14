@@ -98,7 +98,7 @@ DWORD WINAPI ProcessClient(LPVOID lpParameter)
                             directoryContents += entry.path().filename().string() + "\t|\t"
                                 + std::to_string(fs::file_size(entry)) + " bytes\t|\t"
                                 + oss.str()
-                                + "\n";
+                                + ";\n";
                         }
                     }
 
