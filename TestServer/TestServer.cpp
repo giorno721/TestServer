@@ -37,7 +37,7 @@ DWORD WINAPI ClearCachePeriodically(LPVOID lpParameter)
 {
     Cache* cache = reinterpret_cast<Cache*>(lpParameter);
     while (true) {
-        Sleep(45000);  // Використання Sleep з WinAPI для затримки на 5 секунд
+        Sleep(5000);  // Використання Sleep з WinAPI для затримки на 5 секунд
         cache->ClearData();
     }
     return 0;
@@ -46,10 +46,18 @@ DWORD WINAPI ClearCachePeriodically(LPVOID lpParameter)
 DWORD WINAPI ProcessClient(LPVOID lpParameter)
 {
     SOCKET clientSocket = (SOCKET)lpParameter;
-
-    while (true) {
+    HANDLE hThread = NULL;
+    int i = 0;
+    while (true)
+    {
+        if (i == 1)
+        {
+            if (!TerminateThread(hThread, 0))
+            {
+                std::cerr << "Failed to terminate thread. Error code: " << GetLastError() << std::endl;
+            }
+        }
         Cache cache;
-        CreateThread(NULL, NULL, ClearCachePeriodically, (LPVOID)&cache, NULL, NULL);
 
         char buffer[1024];
         int bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0);
@@ -94,11 +102,21 @@ DWORD WINAPI ProcessClient(LPVOID lpParameter)
                         }
                     }
 
-                    send(clientSocket, directoryContents.c_str(), directoryContents.size(), 0);
+                    if (directoryContents.size() <= 0)
+                    {
+                        std::string messaage = "File is not found";
+                        send(clientSocket, messaage.c_str(), messaage.size(), 0);
+                    }
+                    else
+                    {
+                        send(clientSocket, directoryContents.c_str(), directoryContents.size(), 0);
+                    }
                     std::cout << "Directory contents sent to the client.\n";
                     cache.SetPath(userInformation[0]);
                     cache.SetFileExtension(userInformation[1]);
                     cache.SetDirectoryContents(directoryContents);
+                    i = 1;
+                    hThread = CreateThread(NULL, NULL, ClearCachePeriodically, (LPVOID)&cache, NULL, NULL);
                 }
             }
             catch (const std::filesystem::filesystem_error& e) {
@@ -113,6 +131,7 @@ DWORD WINAPI ProcessClient(LPVOID lpParameter)
         }
     }
 
+    CloseHandle(hThread);
     closesocket(clientSocket);
     return 0;
 
@@ -124,7 +143,6 @@ void server() {
         std::cerr << "WSAStartup failed.\n";
         return;
     }
-
     SOCKET serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (serverSocket == INVALID_SOCKET) {
         std::cerr << "Error creating server socket. Error code: " << WSAGetLastError() << std::endl;
