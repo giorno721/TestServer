@@ -16,12 +16,21 @@ void client() {
 	return;
   }
 
+<<<<<<< HEAD
   SOCKET clientSocket = socket(AF_INET, SOCK_STREAM, 0);
   if (clientSocket == INVALID_SOCKET) {
 	std::cerr << "Error creating client socket. Errocr code: " << WSAGetLastError() << std::endl;
 	WSACleanup();
 	return;
   }
+=======
+    SOCKET clientSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if (clientSocket == INVALID_SOCKET) {
+        std::cerr << "Error creating client socket. Errocr code: " << WSAGetLastError() << std::endl;
+        WSACleanup();
+        return;
+    }
+>>>>>>> e1d043edc89add952ac34de3ccc0a8291abfb980
 
   sockaddr_in serverAddr;
   serverAddr.sin_family = AF_INET;
@@ -43,11 +52,44 @@ void client() {
 	std::cout << "Enter the directory path: ";
 	std::getline(std::cin, directoryPath);
 
+<<<<<<< HEAD
 	std::string fileExtension;
 	std::cout << "Enter the file extension: ";
 	std::getline(std::cin, fileExtension);
 
 	std::string fileAndPath = directoryPath + "|" + fileExtension;
+=======
+        std::string fileExtension;
+        std::cout << "Enter the file extension: ";
+        std::getline(std::cin, fileExtension);
+
+        std::string fileAndPath = directoryPath + "|" + fileExtension;
+
+        if (send(clientSocket, fileAndPath.c_str(),
+            static_cast<int>(fileAndPath.size()) + 1, 0) != SOCKET_ERROR) {
+            std::cout << "Directory path and file extension sent to the server: " << fileAndPath << std::endl;
+        }
+        else {
+            std::cerr << "Error sending to server. Error code: " << WSAGetLastError() << std::endl;
+            break;
+        }
+
+        // Receive the directory contents from the server
+        char buffer[65536];
+        int bytesRead = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            std::cout << "Received directory contents from the server:\n" << buffer << std::endl;
+        }
+        else if (bytesRead == 0) {
+            std::cerr << "Server disconnected.\n";
+        }
+        else {
+            std::cerr << "Error receiving from server. Error code: " << WSAGetLastError() << std::endl;
+            break;
+        }
+    }
+>>>>>>> e1d043edc89add952ac34de3ccc0a8291abfb980
 
 	if (send(clientSocket, fileAndPath.c_str(),
 	  static_cast<int>(fileAndPath.size()) + 1, 0) != SOCKET_ERROR) {
@@ -79,8 +121,16 @@ void client() {
   WSACleanup();
 }
 
+<<<<<<< HEAD
 int main() {
   client();
   //lkjh
   return 0;
 }
+=======
+int main1() {
+    client();
+    //lkjh
+    return 0;
+}
+>>>>>>> e1d043edc89add952ac34de3ccc0a8291abfb980
