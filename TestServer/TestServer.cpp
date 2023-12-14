@@ -48,16 +48,18 @@ DWORD WINAPI ProcessClient(LPVOID lpParameter)
     SOCKET clientSocket = (SOCKET)lpParameter;
     HANDLE hThread = NULL;
     int i = 0;
+    Cache cache;
+
     while (true)
     {
         if (i == 1)
         {
-            if (!TerminateThread(hThread, 0))
+        /*    if (!TerminateThread(hThread, 0))
             {
                 std::cerr << "Failed to terminate thread. Error code: " << GetLastError() << std::endl;
-            }
+            }*/
         }
-        Cache cache;
+        
 
         char buffer[1024];
         int bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0);
@@ -98,7 +100,7 @@ DWORD WINAPI ProcessClient(LPVOID lpParameter)
                             directoryContents += entry.path().filename().string() + "\t|\t"
                                 + std::to_string(fs::file_size(entry)) + " bytes\t|\t"
                                 + oss.str()
-                                + ";\n";
+                                + "\r\n";
                         }
                     }
 
