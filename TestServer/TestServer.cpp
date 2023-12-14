@@ -7,6 +7,8 @@
 #include <ctime>
 #include <winsock2.h>
 
+#include "Cache.h"
+
 #pragma comment(lib, "ws2_32.lib")
 
 namespace fs = std::filesystem;
@@ -66,16 +68,16 @@ void server() {
 
   std::cout << "Server is listening for incoming connections...\n";
 
-  while (true) {
-	SOCKET clientSocket = accept(serverSocket, NULL, NULL);
-	if (clientSocket == INVALID_SOCKET) {
-	  std::cerr << "Accept failed. Error code: " << WSAGetLastError() << std::endl;
-	  closesocket(serverSocket);
-	  WSACleanup();
-	  return;
-	}
+  SOCKET clientSocket = accept(serverSocket, NULL, NULL);
+  if (clientSocket == INVALID_SOCKET) {
+	std::cerr << "Accept failed. Error code: " << WSAGetLastError() << std::endl;
+	closesocket(serverSocket);
+	WSACleanup();
+	return;
+  }
 
-	std::cout << "Client connected.\n";
+  std::cout << "Client connected.\n";
+  while (true) {
 
 	char buffer[1024];
 	int bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0);
@@ -87,7 +89,17 @@ void server() {
 	  std::cout << "Received file extension from client: " << userInformation[1] << std::endl;
 
 	  std::string directoryContents;
+	  Cache cashe;
+	  //cashe.SetPath(userInformation[0]);
+
 	  try {
+		//if (cashe.GetPath() == userInformation[0] &&
+		//  cashe.GetFileExtension == userInformation[1])
+		//{
+
+		//}
+		//else
+		//{
 		for (const auto &entry : std::filesystem::directory_iterator(userInformation[0]))
 		{
 		  if (entry.path().extension() == userInformation[1])
@@ -108,16 +120,11 @@ void server() {
 			  + "\n";
 		  }
 		}
-		if (!directoryContents.empty())
-		{
-		  send(clientSocket, directoryContents.c_str(), directoryContents.size(), 0);
-		  std::cout << "Directory contents sent to the client.\n";
-		}
-		else
-		{
-		  std::cout << "File with " << userInformation[1] << " is not found." << std::endl;
-		}
+
+		send(clientSocket, directoryContents.c_str(), directoryContents.size(), 0);
+		std::cout << "Directory contents sent to the client.\n";
 	  }
+	  //}
 	  catch (const std::filesystem::filesystem_error &e) {
 		std::cerr << "Error accessing directory: " << e.what() << std::endl;
 		// Send an error message to the client if needed
@@ -128,7 +135,6 @@ void server() {
 	  }
 	}
 
-	closesocket(clientSocket);
   }
 
   closesocket(serverSocket);
