@@ -90,7 +90,6 @@ void server() {
 
 	  std::string directoryContents;
 	  Cache cashe;
-	  //cashe.SetPath(userInformation[0]);
 
 	  try {
 		//if (cashe.GetPath() == userInformation[0] &&

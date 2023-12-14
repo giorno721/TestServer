@@ -1,42 +1,29 @@
-#include <iostream>
-#include <string>
+#include "Cache.h"
 
-using namespace std;
 
-class Cache
-{
-public:
-  Cache() {}
+Cache::Cache() {
+}
 
-  string GetPath() const
-  {
-	return path;
-  }
-  void SetPath(const string &newPath)
-  {
-	path = newPath;
-  }
+std::string Cache::GetPath() const {
+  return path;
+}
 
-  string GetFileExtension() const
-  {
-	return fileExtension;
-  }
-  void SetFileExtension(const string &newFileExtension)
-  {
-	fileExtension = newFileExtension;
-  }
+std::string Cache::GetFileExtension() const {
+  return fileExtension;
+}
 
-  string GetDirectoryContents() const
-  {
-	return directoryContents;
-  }
-  void SetDirectoryContents(const string &newDirectoryContents)
-  {
-	directoryContents = newDirectoryContents;
-  }
+std::string Cache::GetDirectoryContents() const {
+  return directoryContents;
+}
 
-private:
-  string path;
-  string fileExtension;
-  string directoryContents;
-};
+void Cache::SetPath(const std::string &newPath) {
+  path = newPath;
+}
+
+void Cache::SetFileExtension(const std::string &newFileExtension) {
+  fileExtension = newFileExtension;
+}
+
+void Cache::SetDirectoryContents(const std::string &newDirectoryContents) {
+  directoryContents = newDirectoryContents;
+}
