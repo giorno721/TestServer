@@ -7,7 +7,7 @@
 using namespace std;
 
 const int PORT = 12345;  // Use the same port as the server
-const char* SERVER_IP = "192.168.56.1";  // Replace with the server's IP address
+const char* SERVER_IP = "127.0.0.1";  // Replace with the server's IP address
 
 void client() {
     WSADATA wsaData;
